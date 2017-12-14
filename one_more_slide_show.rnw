@@ -1,0 +1,133 @@
+\documentclass{beamer}
+\usetheme{berkeley}
+\usecolortheme{albatross}
+
+\begin{document}
+
+\title{Cumulative Sentiment Line Chart}
+\author{Andrew Mayo}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Outline}
+    \tableofcontents
+\end{frame}
+
+
+\section{Install and Load Libraries}
+\begin{frame}[fragile]
+  \frametitle{Install and Load Libraries}
+    \begin{itemize}
+      \item<1->
+        <<warning=FALSE,message=FALSE>>=
+        library(dplyr)
+        @
+      \item<2->
+        <<warning=FALSE,message=FALSE>>=
+        library(tidytext)
+        @
+      \item<3->
+        <<warning=FALSE,message=FALSE>>=
+        library(gutenbergr)
+        @
+      \item<4->
+        <<warning=FALSE,message=FALSE>>=
+        library(ggplot2)
+        @
+      \item<5->
+        <<warning=FALSE,message=FALSE>>=
+        library(stringr)
+        @
+    \end{itemize}
+\end{frame}
+
+\section{Access Project Gutenberg}
+\begin{frame}[fragile]
+  \frametitle{Access Project Gutenberg}
+    <<>>==
+    gutenberg_works(str_detect(title, "Frankenstein"))
+    @
+\end{frame}
+
+\section{Download Dracula and Sentiments}
+\begin{frame}[fragile]
+  \frametitle{Download Dracula and Sentiments}
+  <<warning=FALSE,message=FALSE>>=
+  afinn <- get_sentiments("afinn")
+  frank <- gutenberg_download(84)
+  @
+\end{frame}
+
+
+\section{Unpacking Words}
+\begin{frame}[fragile]
+  \frametitle{Unpacking Words}
+  <<>>=
+  f_words <- frank%>%
+      unnest_tokens(word,text)
+  colnames(f_words)
+  f_words$word[500]
+  @
+\end{frame}
+
+\section{Word Numbers}
+\begin{frame}[fragile]
+  \frametitle{Adding Word Numbers}
+  <<>>=
+  nrow(f_words)
+  f_words$word_number <- 1:75175
+  @
+\end{frame}
+
+\section{The Inner-join}
+\begin{frame}[fragile]
+  \frametitle{The Inner-join}
+  <<>>=
+  frank_sent <- inner_join(afinn, f_words)
+  frank_sent$gutenberg_id <- NULL
+  head(frank_sent)
+  @
+\end{frame}
+
+\section{Arranging Words}
+\begin{frame}[fragile]
+  \frametitle{Arranging Words in Book Order}
+  <<>>=
+  frank_sent <- frank_sent%>%
+            arrange(word_number)
+  head(frank_sent)
+  @
+
+\end{frame}
+
+\section{Cumulative Sentiment}
+\begin{frame}[fragile,allowframebreaks]
+  \frametitle{Getting the Cumulative Sentiment}
+  <<>>=
+  frank_sent$accum_sent <- cumsum(frank_sent$score)
+  head(frank_sent)
+  @
+
+
+\end{frame}
+
+\section{Line Plot}
+\begin{frame}[fragile,allowframebreaks]
+  \frametitle{Changing Sentiment Throughout Frankenstein}
+  <<>>=
+   plot <- ggplot()+
+  geom_line(data = frank_sent,
+            aes(x = word_number,
+                y = accum_sent))
+  @
+
+\framebreak
+<<echo=FALSE, fig.height=5>>=
+  plot
+  @
+
+\end{frame}
+\end{document}

@@ -1,0 +1,208 @@
+\documentclass{beamer}
+\usetheme{bergen}
+\usecolortheme{albatross}
+\begin{document}
+
+\title{Compraison Barplots}
+\author{Justin Minsk}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Load and Install Libraries}
+\begin{frame}[fragile]
+  \frametitle{Load and Install Libraries}
+    \begin{itemize}
+      \item<1->
+<<warning=FALSE,message=FALSE>>=
+library(dplyr)
+@
+      \item<2->
+<<warning=FALSE,message=FALSE>>=
+library(tidytext)
+@
+      \item<3->
+<<warning=FALSE,message=FALSE>>=
+library(gutenbergr)
+@
+      \item<4->
+<<warning=FALSE,message=FALSE>>=
+library(ggplot2)
+@
+      \item<5->
+<<warning=FALSE,message=FALSE>>=
+library(stringr)
+@
+      \item<6->
+<<warning=FALSE,message=FALSE>>=
+library(wordcloud2)
+@
+      \item<7->
+<<warning=FALSE,message=FALSE>>=
+library(reshape2)
+@
+      \item<8->
+<<warning=FALSE,message=FALSE>>=
+library(wordcloud)
+@
+    \end{itemize}
+\end{frame}
+
+\section{Access Progect Gutenburg}
+\begin{frame}[fragile]
+  \frametitle{Access Progect Gutenburg}
+<<warning=FALSE,message=FALSE>>=
+df<-gutenberg_works(str_detect(title, 'Dracula'))
+df$gutenberg_id
+df$title
+
+@
+\end{frame}
+
+\section{Download Dracula}
+\begin{frame}[fragile]
+  \frametitle{Download Dracula}
+<<warning=FALSE,message=FALSE>>=
+dracula <- gutenberg_download(345)
+colnames(dracula)
+substr(dracula$text[500],1,21)
+@
+\end{frame}
+
+\section{Unpacking the Words}
+\begin{frame}[fragile]
+  \frametitle{Unpacking the Words}
+<<>>=
+dracula_words <- dracula%>%
+  unnest_tokens(word, text)
+colnames(dracula_words)
+dracula_words[498:500,]
+@
+\end{frame}  
+
+\section{Bing Lexicon}
+\begin{frame}[fragile]
+  \frametitle{Bing Lexicon}
+<<>>=
+bing <- get_sentiments('bing')
+colnames(bing)
+bing[498:500,]
+@
+\end{frame}  
+
+\section{Interjoin}
+\begin{frame}[fragile]
+  \frametitle{Interjoin}
+<<>>=
+dracula_words<-inner_join(dracula_words,bing)
+dracula_words$gutenberg_id <- NULL
+colnames(dracula_words)
+dracula_words[498:500,]
+@
+  
+\end{frame}
+
+\section{Top Ten Postive Words}
+\begin{frame}[allowframebreaks, fragile]
+  \frametitle{Top Ten Postive Words}
+<<>>=
+dracula_pos <- dracula_words%>%
+  filter(sentiment == 'positive')%>%
+  group_by(word)%>%
+  summarise(count = n())%>%
+  arrange(desc(count))%>%
+  filter(count >= 66)%>%
+  top_n(10, wt = count)
+@
+
+\framebreak
+
+<<>>=
+dracula_pos
+@
+
+\end{frame}
+
+\section{Top Ten Negtive Words}
+\begin{frame}[allowframebreaks, fragile]
+  \frametitle{Top Ten Negtive Words}
+<<>>=
+dracula_neg <- dracula_words%>%
+  filter(sentiment == 'negative')%>%
+  group_by(word)%>%
+  summarise(count = n())%>%
+  arrange(desc(count))%>%
+  filter(count >= 53)%>%
+  top_n(10, wt = count)
+@
+
+\framebreak
+
+<<>>=
+dracula_neg
+@
+
+\end{frame}
+
+\section{Comparison Bar Plot}
+\begin{frame}[allowframebreaks, fragile]
+  \frametitle{Comparison Bar Plot}
+
+<<>>=
+dracula_pos$sentiment <- 'postive'
+dracula_neg$sentiment <- 'negative'
+dracula_pos$word <- factor(dracula_pos$word,
+                           level = dracula_pos$word)
+dracula_neg$word <- factor(dracula_neg$word,
+                           level = dracula_neg$word)
+dracula_comp <- rbind(dracula_neg, dracula_pos)
+@
+
+\framebreak
+
+<<fig.height=5>>=
+ggplot()+
+  geom_bar(data = dracula_comp,
+           aes(x = word, y = count, 
+               color = sentiment,
+               fill = sentiment), stat = 'identity')+
+  coord_flip()+
+  facet_wrap(~sentiment, scales = 'free_y')+
+  scale_fill_manual(values = c('black', '#ea6205'))+
+  scale_color_manual(values = c('#ea6205', 'black'))
+@
+
+\end{frame}
+
+\section{WordCloud}
+\begin{frame}[allowframebreaks, fragile]
+  \frametitle{WordCloud}
+  
+<<>>=
+dracula_words <- dracula_words%>%
+  group_by(word)%>%
+  summarise(freq = n())
+dracula_sent <- inner_join(bing, dracula_words)
+wordcloud(dracula_sent$word, dracula_sent$freq, min.freq = 5)
+@
+
+\end{frame}
+
+\section{Comparison WordCloud}
+\begin{frame}[allowframebreaks, fragile]
+  \frametitle{Comparison WordCloud}
+  
+<<>>=
+dracula_matrix <- acast(dracula_sent, word~sentiment, value.var = 'freq', fill = 0)
+@
+ 
+\framebreak
+
+<<fig.height=5>>=
+comparison.cloud(dracula_matrix, colors = c('black', '#ff7433'))
+@
+ 
+\end{frame}
+
+\end{document}

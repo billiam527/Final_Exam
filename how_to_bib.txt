@@ -1,0 +1,31 @@
+To create a bibliography:
+
+In your article:
+Must add four things...
+1) at the beginning of the article add a line: \usepackage{natbib}
+2) at the end add a line: \bibliographystyle{apa}
+3) at the end add a line: \bibliography{article}
+4) at the end add a line: \nocite{*}
+
+Follow the following format in a text file with the name of your file and a .bib extension
+@book{Silge,
+author={Julia silge and David Robinson},
+publisher={O'Reilly Media},
+year={2017},
+title={text Mining with R: A Tidy Approach}
+}
+
+@book{Wickham,
+author={Hadley Wickham and Garrett Grolemund},
+publisher={O'Reilly Media},
+year={2017},
+title={R for Data Science: Import, Tidy, Transform and Model Data}
+}
+
+Once done, in the terminal use the following...
+
+Run these four things one by one.
+pdflatex <article name>
+bibtex <bibliography name sans .bib>
+pdflatex <article name>
+pdflatex <article name>

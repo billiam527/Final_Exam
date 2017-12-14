@@ -1,0 +1,29 @@
+\documentclass{book}
+\usepackage{makeidx}
+\makeindex
+
+\begin{document}
+\title{Stress Management}
+\author{Judy Minichelli \and William Bickelmann \and Andrew Mayo}
+\date{}
+\maketitle
+
+\tableofcontents
+
+<<child='Children/chapter1.Rnw'>>=
+
+@
+
+
+<<child='Children/chapter2.Rnw'>>=
+
+@
+
+
+<<child='Children/chapter3.Rnw'>>=
+
+@
+
+\printindex
+
+\end{document}
